@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: user-ingress
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: api-user-static-ip
+spec:
+  tls:
+    - hosts:
+        - api.upnidinternal.com
+      secretName: user-ingress-tls
+  rules:
+    - host: api.upnidinternal.com
+      http:
+        paths:
+          - path: /*
+            backend:
+              serviceName: user-service
+              servicePort: 5070

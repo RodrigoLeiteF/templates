@@ -1,0 +1,11 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{name}}-deployment
+spec:
+  template:
+    spec:
+      containers:
+        - name: {{name}}
+          readinessProbe: ~
+          livenessProbe: ~

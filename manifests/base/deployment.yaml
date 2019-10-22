@@ -1,0 +1,26 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{name}}-deployment
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{name}}
+    spec:
+      containers:
+        - name: {{name}}
+          image: us.gcr.io/upnid-stage/api/{{name}}:latest
+          ports:
+            - containerPort: 5070
+          readinessProbe:
+            httpGet:
+              port: 5070
+            initialDelaySeconds: 3
+            periodSeconds: 2
+          livenessProbe:
+            httpGet:
+              port: 5070
+            initialDelaySeconds: 5
+            periodSeconds: 5

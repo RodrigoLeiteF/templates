@@ -1,0 +1,15 @@
+namespace: {{name}}
+
+bases:
+  - ../base
+
+patchesStrategicMerge:
+  - deployment_probes.yml
+
+configMapGenerator:
+  - name: {{name}}-configmap
+    literals:
+      - NODE_ENV=development
+      - GATEWAY_HOST=localhost:5070
+      - GATEWAY_DOMAIN=localhost:5070
+      - MONGO_URI=mongodb://mongo.gateway.svc.cluster.local:27017/upnid

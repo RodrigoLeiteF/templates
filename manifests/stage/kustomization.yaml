@@ -1,0 +1,26 @@
+namespace: user
+
+bases:
+  - ../base
+
+resources:
+  - ingress.yaml
+
+patchesStrategicMerge:
+  - deployment_container_env.yaml
+
+configMapGenerator:
+  - name: user-deployment-configmap
+    literals:
+      - NODE_ENV=staging
+      - GATEWY_HOST=api.upnidinternal.com
+      - GATEWAY_DOMAIN=upnidinternal.com
+secretGenerator:
+  - name: user-ingress-tls
+    files:
+      - tls.crt=tls.crt
+      - tls.key=tls.pem
+    type: 'kubernetes.io/tls'
+  - name: user-deployment-secret
+    type: Opaque
+    env: .env
