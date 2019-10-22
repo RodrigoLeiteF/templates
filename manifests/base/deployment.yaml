@@ -13,14 +13,14 @@ spec:
         - name: {{name}}
           image: us.gcr.io/upnid-stage/api/{{name}}:latest
           ports:
-            - containerPort: 5070
+            - containerPort: {{port}}
           readinessProbe:
             httpGet:
-              port: 5070
+              port: {{port}}
             initialDelaySeconds: 3
             periodSeconds: 2
           livenessProbe:
             httpGet:
-              port: 5070
+              port: {{port}}
             initialDelaySeconds: 5
             periodSeconds: 5
