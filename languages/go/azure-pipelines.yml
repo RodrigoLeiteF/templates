@@ -1,0 +1,130 @@
+trigger:
+  branches:
+    include:
+      - 'master'
+  paths:
+    include:
+      - services/{{name}}/*
+
+pr:
+  branches:
+    include:
+      - '*'
+  paths:
+    include:
+      - services/{{name}}/*
+      
+resources:
+  containers:
+    - container: mongo
+      image: mongo:4.2
+      ports:
+        - 27017:27017
+
+stages:
+  - stage: Test
+    dependsOn: []
+    jobs:
+      - job: Unit
+        pool:
+          vmImage: 'ubuntu-latest'
+        services:
+          mongo: mongo
+        steps:
+          - template: ../../templates/setup_go.yml
+
+          - script: go test . -v
+            displayName: Run Tests
+            workingDirectory: services/$(Build.DefinitionName)
+
+  - stage: Build
+    condition: or(eq(variables['build'], 'true'), eq(variables['Build.SourceBranchName'], 'master'))
+    dependsOn: []
+    jobs:
+      - job: Docker
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - template: ../../templates/setup_gcp.yml
+            parameters:
+              project: upnid-prod
+
+          - template: ../../templates/build_image.yml
+            parameters:
+              image: $(Build.DefinitionName)
+              tag: $(Build.BuildNumber)
+              workingDirectory: services/$(Build.DefinitionName)
+
+          - publish: services/$(Build.DefinitionName)/manifests
+            artifact: manifests
+
+  - stage: Staging
+    condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'master'))
+    dependsOn:
+      - Test
+      - Build
+    jobs:
+      - deployment: Deploy
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'Staging'
+        variables:
+          - group: k8s-cluster-info-stage
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: manifests
+
+                - template: ../../templates/setup_gcp.yml
+                  parameters:
+                    project: $(project)
+
+                - template: ../../templates/install_kustomize.yml
+
+                - script: gcloud container clusters get-credentials $(cluster) --zone $(zone)
+                  displayName: Get cluster credentials
+
+                - template: ../../templates/kustomize_set_image.yml
+                  parameters:
+                    workingDirectory: $(Pipeline.Workspace)/manifests/$(env)
+
+                - script: kustomize build ./ | kubectl apply -f -
+                  displayName: Build and apply manifests
+                  workingDirectory: $(Pipeline.Workspace)/manifests/$(env)
+
+  - stage: Production
+    condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'master'))
+    dependsOn:
+      - Staging
+    jobs:
+      - deployment: Deploy
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'Production'
+        variables:
+          - group: k8s-cluster-info-prod
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: manifests
+
+                - template: ../../templates/setup_gcp.yml
+                  parameters:
+                    project: $(project)
+
+                - template: ../../templates/install_kustomize.yml
+
+                - script: gcloud container clusters get-credentials $(cluster) --region $(region)
+                  displayName: Get cluster credentials
+
+                - template: ../../templates/kustomize_set_image.yml
+                  parameters:
+                    workingDirectory: $(Pipeline.Workspace)/manifests/$(env)
+
+                - script: kustomize build ./ | kubectl apply -f -
+                  displayName: Build and apply manifests
+                  workingDirectory: $(Pipeline.Workspace)/manifests/$(env)

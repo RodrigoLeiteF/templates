@@ -1,24 +1,18 @@
 FROM golang:1.13-alpine as builder
-
-ENV SERVER_HOST=0.0.0.0
-ENV SERVER_PORT={{port}}
-ENV TZ=UTC
-
 WORKDIR /usr/src/app
 
-# Enable private repositories
-RUN apk add --no-cache git
-ENV GOPRIVATE=github.com/upnid/*
-RUN git config --global url."https://c8bec607a68f8ab97c50bc12e603f936c7db1fb6:x-oauth-basic@github.com/upnid".insteadOf "https://github.com/upnid"
+ENV SERVER_PORT=50101
 
+# Enable private repositories
+RUN apk add --no-cache --virtual .build-deps g++ git
+ENV GOPRIVATE=github.com/upnid/*
+RUN git config --global url."https://59eb5e63e03c411c701676e678d0cc12d6fbbc1d:x-oauth-basic@github.com/upnid".insteadOf "https://github.com/upnid"
+
+# Build
 COPY go.mod go.sum ./
 RUN go mod download
-RUN go env
 COPY . . 
+RUN go build -o main .
 
-RUN go build .
-
-CMD ["./{{name}}"]
-
+CMD ["./main"]
 EXPOSE $SERVER_PORT
-
