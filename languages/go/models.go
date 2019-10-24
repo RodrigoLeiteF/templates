@@ -8,7 +8,7 @@ import (
 )
 
 // UserModel is the model definition of a {{name}} document.
-type {{name}Model struct {
+type {{name}}Model struct {
 	ID          string     `json:"id,omitempty" bson:"_id,omitempty"`
 	Status      string     `json:"status,omitempty" bson:"status,omitempty"`
 	Avatar      string     `json:"avatar,omitempty" bson:"avatar,omitempty"`
