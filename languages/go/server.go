@@ -35,5 +35,6 @@ func RegisterServer(gs *grpc.Server, db *mongo.Database, ps *pubsub.Client, kms 
 	{{name}}pb.Register{{name}}APIServer(gs, server)
 }
 
-func (s *server) Create{{name}}(ctx context.Context, request *{{name}}pb.Create{{name}}Request) (*{{name}}pb.Create{{name}}Response, error) {
-}
+{{#each functions}}
+{{> function rpc=rpc service_name=../name request=request response=response}}
+{{/each}}
